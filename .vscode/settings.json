@@ -1,0 +1,19 @@
+{
+	"Lua.diagnostics.globals": [
+		"G",
+		"SMODS",
+		"tprint",
+		"love",
+		"Card",
+		"localize",
+		"create_card",
+		"copy_table",
+		"Tag",
+		"create_playing_card",
+		"create_UIBox_generic_options",
+		"UIBox_button",
+		"darken",
+		"create_text_input",
+		"create_tabs"
+	]
+}
