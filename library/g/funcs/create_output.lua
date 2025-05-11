@@ -17,7 +17,7 @@ local process_playing_card = exports.process_playing_card
 local process_suit = exports.process_suit
 local process_mod = exports.process_mod
 
-local copy_command = 'cp -R "Mods/CardExporter/Template/." "' .. output_root .. '"' -- macOS version
+local copy_command = 'cp -R "Mods/CardExporter/Template/." "' .. output_root .. '"'
 
 local function copy_template()
 	os.execute(copy_command)
@@ -51,7 +51,15 @@ G.FUNCS.create_output = function(e)
 		love.filesystem.createDirectory(output_root .. "images")
 	end
 
-	for k, v in pairs(G.P_CENTERS) do
+	local keys = {}
+
+	for k in pairs(G.P_CENTERS) do table.insert(keys, k) end
+
+	table.sort(keys)
+
+	for _, k in pairs(keys) do
+		local v = G.P_CENTERS[k]
+
 		if not v.mod then
 			v.mod = {}
 			v.mod.id = "Balatro"
@@ -66,27 +74,44 @@ G.FUNCS.create_output = function(e)
 				card:hover()
 				process_edition(sets, card)
 			elseif v.set == "Enhanced" then
-				-- card = Card(G.jokers.T.x + G.jokers.T.w / 2, G.jokers.T.y, G.CARD_W, G.CARD_H, G.P_CARDS.empty, v)
-				-- card:set_ability(v, true, true)
-				-- card:hover()
-				-- process_enhancement(card)
+				card = Card(G.jokers.T.x + G.jokers.T.w / 2, G.jokers.T.y, G.CARD_W, G.CARD_H, G.P_CARDS.empty, v)
+				card:set_ability(v, true, true)
+				card:hover()
+				process_enhancement(sets, card)
 			elseif v.set == "Sticker" then
-				card = create_card("Default", G.jokers, nil, nil, nil, nil, "c_base", nil)
+				card = SMODS.create_card({
+					set = "Default",
+					area = G.jokers,
+					skip_materialize = true,
+					key = "c_base"
+				})
 				card:set_sticker(v, true, true)
 				card:hover()
-			elseif not v.set or v.set == "Other" or v.set == "Default" or v.set == "Back" then
+			elseif not v.set or v.set == "Other" or v.set == "Default" then
 			elseif not v.no_collection then
-				card = create_card(v.set, G.jokers, v.legendary, v.rarity, nil, nil, v.key, nil)
 				card = SMODS.create_card({
 					set = v.set,
 					area = G.jokers,
 					skip_materialize = true,
 					legendary = v.legendary,
 					rarity = v.rarity,
-					key = v.key
+					key = v.key,
+					no_edition = true
 				})
-				card:hover()
-				process_card(sets, card)
+
+				local hover_status = pcall(card.hover, card)
+
+				if not hover_status then
+					print("Error hovering card: " .. v.key)
+					card = nil
+				else
+					local process_status = pcall(process_card, sets, card)
+
+					if not process_status then
+						print("Error processing card: " .. v.key)
+						card = nil
+					end
+				end
 			end
 			if card then
 				card:stop_hover()
@@ -144,7 +169,13 @@ G.FUNCS.create_output = function(e)
 		if table.contains(clean_filter, v.mod.id) then
 			print("Processing " .. k .. " | " .. tostring(v.set))
 			v.discovered = true
-			card = create_card("Default", G.jokers, nil, nil, nil, nil, "c_base", nil)
+			card = SMODS.create_card({
+				set = "Default",
+				area = G.jokers,
+				skip_materialize = true,
+				key = "c_base",
+				no_edition = true
+			})
 			card:set_seal(v.key, true)
 			card:hover()
 			process_seal(sets, card, v)
